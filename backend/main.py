@@ -44,6 +44,7 @@ except ConnectionFailure:
 class ReportStatus(str, Enum):
     MENUNGGU = "menunggu_audit"
     DIPERBAIKI = "diperbaiki"
+
     SELESAI = "selesai"
     DITOLAK = "ditolak"
 class ReportSchema(BaseModel):
@@ -51,8 +52,11 @@ class ReportSchema(BaseModel):
     tingkat_kerusakan: str = Field(..., description="Pilih: Ringan, Sedang, Berat")
     kecamatan: str = Field(..., description="Nama Kecamatan")
     desa: str = Field(..., description="Nama Desa/Gampong")
+    kecamatan: str = Field(..., description="Nama Kecamatan")
+    desa: str = Field(..., description="Nama Desa/Gampong")
     latitude: float = Field(..., description="Titik koordinat Y")
     longitude: float = Field(..., description="Titik koordinat X")
+    description: str = Field(..., description="Penjelasan patokan/deskripsi tambahan")
     description: str = Field(..., description="Penjelasan patokan/deskripsi tambahan")
 
 class UpdateStatusSchema(BaseModel):
