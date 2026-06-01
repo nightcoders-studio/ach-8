@@ -12,7 +12,16 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Reference file (not part of the app).
+    "contoh-admin.tsx",
   ]),
+  // Generated shadcn/ui primitives — vendored, don't lint strictly.
+  {
+    files: ["components/ui/**/*.tsx"],
+    rules: {
+      "react-hooks/set-state-in-effect": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;
