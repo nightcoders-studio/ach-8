@@ -48,6 +48,7 @@ class ReportStatus(str, Enum):
 
 class ReportSchema(BaseModel):
     photo_url: str = Field(..., description="Link URL foto dari cloud storage")
+    tingkat_kerusakan: str = Field(..., description="Pilih: Ringan, Sedang, Berat")
     latitude: float = Field(..., description="Titik koordinat Y")
     longitude: float = Field(..., description="Titik koordinat X")
     description: str = Field(..., description="Penjelasan detail lokasi/kerusakan")
@@ -90,6 +91,10 @@ async def create_report(report: ReportSchema):
     try:
         new_report = {
             "photo_url": report.photo_url,
+            "tingkat_kerusakan": report.tingkat_kerusakan,
+            "kategori": report.kategori,
+            "kecamatan": report.kecamatan,
+            "desa": report.desa,
             "location": {
                 "type": "Point",
                 "coordinates": [report.longitude, report.latitude]
