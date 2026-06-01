@@ -36,10 +36,3 @@ export interface Report {
   /** ISO string, sesuai backend */
   created_at: string;
 }
-
-export interface StatsSummary {
-  laporanMasuk: number;
-  tervalidasi: number;
-  dalamProses: number;
-  selesai: number;
-}

@@ -1,13 +1,3 @@
-import type { StatsSummary } from "./types";
-
-// Ringkasan statistik untuk hero/stats di beranda warga (angka ilustratif).
-export const STATS_SUMMARY: StatsSummary = {
-  laporanMasuk: 128,
-  tervalidasi: 86,
-  dalamProses: 34,
-  selesai: 8,
-};
-
 // Fitur untuk halaman onboarding.
 export const ONBOARDING_FEATURES = [
   {

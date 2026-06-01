@@ -1,8 +1,17 @@
 // Klien API Fix-In — penghubung frontend ke backend FastAPI (backend/main.py).
 import type { Report, ReportStatus, Severity } from "./types";
 
-export const API_URL =
-  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "http://localhost:8000";
+// Base URL backend.
+// Default: same-origin "/backend" yang diproksikan Next ke FastAPI (lihat next.config.ts).
+// Ini bikin akses lewat localhost, IP LAN, maupun tunnel HTTPS (ngrok) sama-sama jalan
+// tanpa mixed-content. Set NEXT_PUBLIC_API_URL hanya jika backend benar-benar remote.
+function resolveApiUrl(): string {
+  const env = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
+  if (env && !/(localhost|127\.0\.0\.1)/.test(env)) return env;
+  return "/backend";
+}
+
+export const API_URL = resolveApiUrl();
 
 // Koordinat umum Banda Aceh — dipakai saat geolokasi tidak tersedia.
 export const BANDA_ACEH = { latitude: 5.5483, longitude: 95.3238 };

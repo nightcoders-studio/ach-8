@@ -133,7 +133,8 @@ export default function AdminDashboardPage() {
           {loading ? (
             <Skeleton className="h-40 w-full" />
           ) : (
-            <RecentReportsTable reports={reports.slice(0, 5)} />
+            // 5 laporan terbaru, disusun dari bawah ke atas (terbaru di bawah).
+            <RecentReportsTable reports={reports.slice(0, 5).reverse()} />
           )}
         </CardContent>
       </Card>
