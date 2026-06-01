@@ -14,7 +14,7 @@ from pymongo.errors import ConnectionFailure
 load_dotenv()
 
 app = FastAPI(
-    title="API Fix-In (Lapor Jalan Rusak)",
+    title="API Fix-In ",
     description="Backend service untuk menampung laporan jalan rusak dari warga",
     version="1.0.0"
 )
