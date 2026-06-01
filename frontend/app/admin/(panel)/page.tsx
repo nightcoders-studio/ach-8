@@ -1,7 +1,10 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   FileText,
-  BadgeCheck,
+  Clock,
   Loader,
   CheckCircle2,
   AlertTriangle,
@@ -13,39 +16,64 @@ import { KecamatanChart } from "@/components/admin/kecamatan-chart";
 import { RecentReportsTable } from "@/components/admin/recent-reports-table";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MOCK_REPORTS, STATS_SUMMARY } from "@/lib/mock-data";
-
-const STAT_CARDS = [
-  {
-    label: "Laporan Masuk",
-    value: STATS_SUMMARY.laporanMasuk,
-    icon: FileText,
-    iconClass: "bg-primary/10 text-primary",
-  },
-  {
-    label: "Tervalidasi",
-    value: STATS_SUMMARY.tervalidasi,
-    icon: BadgeCheck,
-    iconClass: "bg-success/15 text-[#2e7d32]",
-  },
-  {
-    label: "Dalam Proses",
-    value: STATS_SUMMARY.dalamProses,
-    icon: Loader,
-    iconClass: "bg-warning/20 text-[#8a6d00]",
-  },
-  {
-    label: "Selesai",
-    value: STATS_SUMMARY.selesai,
-    icon: CheckCircle2,
-    iconClass: "bg-success/15 text-[#2e7d32]",
-  },
-];
+import { Skeleton } from "@/components/ui/skeleton";
+import { getReports } from "@/lib/api";
+import type { Report } from "@/lib/types";
 
 export default function AdminDashboardPage() {
-  const belumVerifikasi = MOCK_REPORTS.filter(
-    (r) => r.status === "menunggu_audit",
-  );
+  const [reports, setReports] = useState<Report[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    getReports()
+      .then((data) => active && setReports(data))
+      .catch(() => {})
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const stats = useMemo(() => {
+    const count = (s: Report["status"]) =>
+      reports.filter((r) => r.status === s).length;
+    return {
+      total: reports.length,
+      menunggu: count("menunggu_audit"),
+      diperbaiki: count("diperbaiki"),
+      selesai: count("selesai"),
+    };
+  }, [reports]);
+
+  const belumVerifikasi = reports.filter((r) => r.status === "menunggu_audit");
+
+  const statCards = [
+    {
+      label: "Laporan Masuk",
+      value: stats.total,
+      icon: FileText,
+      iconClass: "bg-primary/10 text-primary",
+    },
+    {
+      label: "Menunggu Audit",
+      value: stats.menunggu,
+      icon: Clock,
+      iconClass: "bg-secondary text-muted-foreground",
+    },
+    {
+      label: "Dalam Proses",
+      value: stats.diperbaiki,
+      icon: Loader,
+      iconClass: "bg-warning/20 text-[#8a6d00]",
+    },
+    {
+      label: "Selesai",
+      value: stats.selesai,
+      icon: CheckCircle2,
+      iconClass: "bg-success/15 text-[#2e7d32]",
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -58,7 +86,6 @@ export default function AdminDashboardPage() {
         </p>
       </div>
 
-      {/* Notifikasi belum diverifikasi */}
       {belumVerifikasi.length > 0 && (
         <Card className="border-warning/40 bg-warning/10">
           <CardContent className="flex items-center gap-3 p-4">
@@ -78,15 +105,17 @@ export default function AdminDashboardPage() {
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {STAT_CARDS.map((c) => (
-          <StatCard key={c.label} {...c} />
-        ))}
+        {loading
+          ? Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-28 w-full rounded-xl" />
+            ))
+          : statCards.map((c) => <StatCard key={c.label} {...c} />)}
       </div>
 
-      {/* Charts */}
+      {/* Charts (data nyata dari laporan) */}
       <div className="grid gap-6 lg:grid-cols-2">
-        <WeeklyChart />
-        <KecamatanChart />
+        <WeeklyChart reports={reports} />
+        <KecamatanChart reports={reports} />
       </div>
 
       {/* Laporan terbaru */}
@@ -101,7 +130,11 @@ export default function AdminDashboardPage() {
           </Link>
         </CardHeader>
         <CardContent>
-          <RecentReportsTable reports={MOCK_REPORTS.slice(0, 5)} />
+          {loading ? (
+            <Skeleton className="h-40 w-full" />
+          ) : (
+            <RecentReportsTable reports={reports.slice(0, 5)} />
+          )}
         </CardContent>
       </Card>
     </div>

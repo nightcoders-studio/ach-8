@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, FileText, BadgeCheck, LogOut } from "lucide-react";
+import { LayoutDashboard, FileText, LogOut } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { cn } from "@/lib/utils";
 
@@ -18,15 +18,8 @@ export const ADMIN_NAV = [
     href: "/admin/laporan",
     label: "Laporan",
     icon: FileText,
-    // aktif hanya di daftar laporan, bukan halaman detail
-    match: (p: string) => p === "/admin/laporan",
-  },
-  {
-    href: "/admin/laporan/1",
-    label: "Verifikasi",
-    icon: BadgeCheck,
-    // aktif di halaman detail/verifikasi laporan
-    match: (p: string) => p.startsWith("/admin/laporan/"),
+    // aktif di daftar laporan & halaman detail/verifikasi
+    match: (p: string) => p.startsWith("/admin/laporan"),
   },
 ];
 

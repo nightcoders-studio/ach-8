@@ -1,4 +1,4 @@
-import type { Category, ReportStatus, Severity } from "./types";
+import type { ReportStatus, Severity } from "./types";
 
 // Metadata status ringkas (dipetakan ke 3 status backend).
 // `className` memakai token tema Fix-In (success/warning) yang didefinisikan di globals.css.
@@ -17,6 +17,10 @@ export const STATUS_META: Record<
   selesai: {
     label: "Selesai",
     className: "bg-success/15 text-[#2e7d32] border border-success/30",
+  },
+  ditolak: {
+    label: "Ditolak",
+    className: "bg-destructive/10 text-destructive border border-destructive/30",
   },
 };
 
@@ -45,34 +49,21 @@ export const SEVERITY_META: Record<
   },
 };
 
-export const CATEGORY_LABEL: Record<Category, string> = {
-  jalan_berlubang: "Jalan Berlubang",
-  jalan_retak: "Jalan Retak",
-  aspal_terkelupas: "Aspal Terkelupas",
-  trotoar_rusak: "Trotoar Rusak",
-  saluran_tersumbat: "Saluran Tersumbat",
-  lainnya: "Lainnya",
-};
-
-export const CATEGORY_OPTIONS = Object.entries(CATEGORY_LABEL).map(
-  ([value, label]) => ({ value: value as Category, label }),
-);
-
-// 6 tahap timeline (visual saja — backend hanya persist 3 status).
+// Tahap timeline (visual). Backend persist status; ditolak ditangani terpisah.
 export const TIMELINE_STEPS = [
   "Laporan Masuk",
   "Menunggu Verifikasi",
-  "Tervalidasi",
-  "Diprioritaskan",
   "Dalam Proses",
   "Selesai",
 ] as const;
 
 // Indeks tahap timeline yang sudah tercapai untuk tiap status backend.
+// ditolak = -1 (alur normal berhenti; ditampilkan sebagai status khusus).
 export const STATUS_TIMELINE_INDEX: Record<ReportStatus, number> = {
   menunggu_audit: 1,
-  diperbaiki: 4,
-  selesai: 5,
+  diperbaiki: 2,
+  selesai: 3,
+  ditolak: -1,
 };
 
 // Opsi untuk dropdown ubah status di panel admin.
@@ -80,4 +71,5 @@ export const STATUS_OPTIONS: { value: ReportStatus; label: string }[] = [
   { value: "menunggu_audit", label: "Menunggu Audit" },
   { value: "diperbaiki", label: "Dalam Proses" },
   { value: "selesai", label: "Selesai" },
+  { value: "ditolak", label: "Ditolak" },
 ];

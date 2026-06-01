@@ -1,25 +1,63 @@
+"use client";
+
+import { use, useEffect, useState } from "react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { ArrowLeft, CalendarDays, MapPin } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { PhotoCarousel } from "@/components/report/photo-carousel";
 import { StatusBadge } from "@/components/report/status-badge";
 import { SeverityBadge } from "@/components/report/severity-badge";
 import { StatusTimeline } from "@/components/report/status-timeline";
 import { ShareButtons } from "@/components/report/share-buttons";
-import { getReportById } from "@/lib/mock-data";
-import { CATEGORY_LABEL } from "@/lib/status";
+import { getReportById } from "@/lib/api";
 import { formatTanggal } from "@/lib/format";
+import type { Report } from "@/lib/types";
 
-export default async function DetailLaporanPage({
+export default function DetailLaporanPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
-  const report = getReportById(id);
-  if (!report) notFound();
+  const { id } = use(params);
+  const [report, setReport] = useState<Report | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    getReportById(id)
+      .then((r) => active && setReport(r))
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-5xl space-y-4 px-4 py-6 sm:py-8">
+        <Skeleton className="h-6 w-40" />
+        <Skeleton className="aspect-[16/10] w-full rounded-2xl" />
+        <Skeleton className="h-32 w-full" />
+      </div>
+    );
+  }
+
+  if (!report) {
+    return (
+      <div className="mx-auto max-w-5xl px-4 py-16 text-center">
+        <p className="text-muted-foreground">Laporan tidak ditemukan.</p>
+        <Link
+          href="/laporan"
+          className="mt-4 inline-flex items-center gap-1 text-sm text-primary hover:underline"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Kembali ke daftar
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 sm:py-8">
@@ -51,7 +89,7 @@ export default async function DetailLaporanPage({
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
             <span className="inline-flex items-center gap-1.5">
               <MapPin className="h-4 w-4 text-primary" />
-              {report.locationText}, {report.kecamatan}
+              {report.locationText}
             </span>
             <span className="inline-flex items-center gap-1.5">
               <CalendarDays className="h-4 w-4" />
@@ -61,9 +99,6 @@ export default async function DetailLaporanPage({
 
           <div className="flex flex-wrap gap-2">
             <SeverityBadge severity={report.severity} />
-            <span className="inline-flex items-center rounded-full border border-border px-3 py-1 text-xs font-medium text-muted-foreground">
-              {CATEGORY_LABEL[report.category]}
-            </span>
           </div>
 
           <Separator />
@@ -72,7 +107,7 @@ export default async function DetailLaporanPage({
             <h2 className="mb-2 font-heading text-lg font-semibold text-foreground">
               Deskripsi
             </h2>
-            <p className="leading-relaxed text-muted-foreground">
+            <p className="whitespace-pre-line leading-relaxed text-muted-foreground">
               {report.description}
             </p>
           </div>

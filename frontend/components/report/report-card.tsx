@@ -4,7 +4,6 @@ import { MapPin } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { StatusBadge } from "./status-badge";
 import { SeverityBadge } from "./severity-badge";
-import { CATEGORY_LABEL } from "@/lib/status";
 import { formatTanggalSingkat } from "@/lib/format";
 import type { Report } from "@/lib/types";
 
@@ -42,9 +41,6 @@ export function ReportCard({ report }: { report: Report }) {
             </span>
             <span>{formatTanggalSingkat(report.created_at)}</span>
           </div>
-          <p className="text-xs font-medium text-muted-foreground/80">
-            {CATEGORY_LABEL[report.category]}
-          </p>
         </div>
       </Card>
     </Link>

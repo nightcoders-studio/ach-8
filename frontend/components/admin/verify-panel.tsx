@@ -1,11 +1,12 @@
 "use client";
 
-import { Flag, Save, Check, X } from "lucide-react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Loader2, Save, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -15,10 +16,74 @@ import {
 } from "@/components/ui/select";
 import { STATUS_OPTIONS } from "@/lib/status";
 import type { ReportStatus } from "@/lib/types";
+import { updateReportStatus } from "@/lib/api";
+import { clearToken, getToken } from "@/lib/auth";
 
-// Panel verifikasi admin — UI saja (tanpa update nyata).
-export function VerifyPanel({ status }: { status: ReportStatus }) {
-  const demo = () => toast.info("Demo struktur halaman — aksi belum aktif.");
+// Panel verifikasi admin — mengubah status laporan via backend (butuh login).
+export function VerifyPanel({
+  reportId,
+  status,
+  onUpdated,
+}: {
+  reportId: string;
+  status: ReportStatus;
+  onUpdated?: (status: ReportStatus) => void;
+}) {
+  const router = useRouter();
+  const [selected, setSelected] = useState<ReportStatus>(status);
+  const [saving, setSaving] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
+
+  // Kirim perubahan status ke backend; kembalikan true bila sukses.
+  async function applyStatus(next: ReportStatus): Promise<boolean> {
+    const token = getToken();
+    if (!token) {
+      toast.error("Sesi habis. Silakan login kembali.");
+      router.replace("/admin/login");
+      return false;
+    }
+    try {
+      await updateReportStatus(reportId, next, token);
+      onUpdated?.(next);
+      return true;
+    } catch (err) {
+      if (err instanceof Error && err.message === "UNAUTHORIZED") {
+        clearToken();
+        toast.error("Sesi habis. Silakan login kembali.");
+        router.replace("/admin/login");
+      } else {
+        toast.error(err instanceof Error ? err.message : "Gagal mengubah status");
+      }
+      return false;
+    }
+  }
+
+  async function handleSave() {
+    if (selected === status) {
+      toast.info("Status tidak berubah.");
+      return;
+    }
+    setSaving(true);
+    if (await applyStatus(selected)) {
+      toast.success("Status laporan berhasil diperbarui.");
+    }
+    setSaving(false);
+  }
+
+  async function handleReject() {
+    if (status === "ditolak") {
+      toast.info("Laporan sudah ditolak.");
+      return;
+    }
+    setRejecting(true);
+    if (await applyStatus("ditolak")) {
+      setSelected("ditolak");
+      toast.success("Laporan ditolak.");
+    }
+    setRejecting(false);
+  }
+
+  const busy = saving || rejecting;
 
   return (
     <Card>
@@ -28,7 +93,10 @@ export function VerifyPanel({ status }: { status: ReportStatus }) {
       <CardContent className="space-y-4">
         <div className="space-y-2">
           <Label>Ubah Status</Label>
-          <Select defaultValue={status}>
+          <Select
+            value={selected}
+            onValueChange={(v) => setSelected(v as ReportStatus)}
+          >
             <SelectTrigger className="w-full">
               <SelectValue />
             </SelectTrigger>
@@ -42,40 +110,28 @@ export function VerifyPanel({ status }: { status: ReportStatus }) {
           </Select>
         </div>
 
-        <div className="space-y-2">
-          <Label>Catatan Admin</Label>
-          <Textarea
-            rows={3}
-            placeholder="Tambahkan catatan untuk laporan ini…"
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-2">
-          <Button onClick={demo} className="col-span-2 gap-2">
+        <Button onClick={handleSave} disabled={busy} className="w-full gap-2">
+          {saving ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
             <Save className="h-4 w-4" />
-            Simpan Perubahan
-          </Button>
-          <Button onClick={demo} variant="outline" className="gap-2">
-            <Flag className="h-4 w-4 text-primary" />
-            Prioritas
-          </Button>
-          <Button
-            onClick={demo}
-            variant="outline"
-            className="gap-2 border-success/40 text-[#2e7d32] hover:bg-success/10"
-          >
-            <Check className="h-4 w-4" />
-            Validasi
-          </Button>
-          <Button
-            onClick={demo}
-            variant="outline"
-            className="col-span-2 gap-2 border-destructive/40 text-destructive hover:bg-destructive/10"
-          >
+          )}
+          {saving ? "Menyimpan…" : "Simpan Perubahan"}
+        </Button>
+
+        <Button
+          onClick={handleReject}
+          disabled={busy || status === "ditolak"}
+          variant="outline"
+          className="w-full gap-2 border-destructive/40 text-destructive hover:bg-destructive/10"
+        >
+          {rejecting ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
             <X className="h-4 w-4" />
-            Tolak Laporan
-          </Button>
-        </div>
+          )}
+          {status === "ditolak" ? "Sudah Ditolak" : "Tolak Laporan"}
+        </Button>
       </CardContent>
     </Card>
   );

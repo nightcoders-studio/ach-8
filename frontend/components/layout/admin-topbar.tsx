@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, CalendarDays, Menu } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { CalendarDays, LogOut, Menu } from "lucide-react";
+import { toast } from "sonner";
+import { clearToken } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Avatar,
   AvatarFallback,
@@ -18,6 +20,13 @@ import { AdminNav } from "./admin-nav";
 
 export function AdminTopbar() {
   const [open, setOpen] = useState(false);
+  const router = useRouter();
+
+  function handleLogout() {
+    clearToken();
+    toast.success("Berhasil keluar.");
+    router.replace("/admin/login");
+  }
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-background/95 px-4 backdrop-blur">
@@ -42,12 +51,6 @@ export function AdminTopbar() {
       </div>
 
       <div className="ml-auto flex items-center gap-3">
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
-          <Badge className="absolute -right-0.5 -top-0.5 h-4 min-w-4 justify-center rounded-full bg-primary p-0 text-[10px] text-primary-foreground">
-            3
-          </Badge>
-        </Button>
         <div className="flex items-center gap-2">
           <Avatar className="h-8 w-8">
             <AvatarFallback className="bg-primary/10 text-primary">
@@ -59,6 +62,15 @@ export function AdminTopbar() {
             <p className="text-xs text-muted-foreground">Dinas PU</p>
           </div>
         </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleLogout}
+          title="Keluar"
+        >
+          <LogOut className="h-5 w-5" />
+          <span className="sr-only">Keluar</span>
+        </Button>
       </div>
     </header>
   );

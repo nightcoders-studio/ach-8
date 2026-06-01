@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { ArrowUpDown, Search } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowUpDown, Loader2, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -10,13 +10,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ReportCard } from "./report-card";
 import { SEVERITY_RANK } from "@/lib/status";
+import { getReports } from "@/lib/api";
 import type { Report } from "@/lib/types";
 
 type SortKey = "terbaru" | "terlama" | "berat" | "ringan";
 
 const ALL = "all";
+const PAGE_SIZE = 6; // jumlah laporan yang dimuat tiap "halaman" lazy load.
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: "terbaru", label: "Terbaru" },
@@ -25,12 +28,38 @@ const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: "ringan", label: "Paling Ringan" },
 ];
 
-// Daftar laporan dengan filter (kecamatan, desa) + urutkan — berjalan client-side.
-export function LaporanExplorer({ reports }: { reports: Report[] }) {
+// Daftar laporan: fetch semua dari backend, filter/urut client-side,
+// lalu render bertahap (lazy loading / infinite scroll).
+export function LaporanExplorer() {
+  const [reports, setReports] = useState<Report[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   const [q, setQ] = useState("");
   const [kecamatan, setKecamatan] = useState<string>(ALL);
   const [desa, setDesa] = useState<string>(ALL);
   const [sort, setSort] = useState<SortKey>("terbaru");
+  const [visible, setVisible] = useState(PAGE_SIZE);
+
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let active = true;
+    getReports()
+      .then((data) => {
+        if (active) setReports(data);
+      })
+      .catch((err) => {
+        if (active)
+          setError(err instanceof Error ? err.message : "Gagal memuat laporan");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const kecamatanList = useMemo(
     () => Array.from(new Set(reports.map((r) => r.kecamatan))).sort(),
@@ -42,7 +71,7 @@ export function LaporanExplorer({ reports }: { reports: Report[] }) {
       kecamatan === ALL
         ? reports
         : reports.filter((r) => r.kecamatan === kecamatan);
-    return Array.from(new Set(base.map((r) => r.desa))).sort();
+    return Array.from(new Set(base.map((r) => r.desa).filter(Boolean))).sort();
   }, [reports, kecamatan]);
 
   const results = useMemo(() => {
@@ -77,6 +106,31 @@ export function LaporanExplorer({ reports }: { reports: Report[] }) {
     });
   }, [reports, q, kecamatan, desa, sort]);
 
+  // Reset jumlah yang tampil saat filter/urutan berubah.
+  useEffect(() => {
+    setVisible(PAGE_SIZE);
+  }, [q, kecamatan, desa, sort]);
+
+  const shown = results.slice(0, visible);
+  const hasMore = visible < results.length;
+
+  // Infinite scroll: tambah PAGE_SIZE saat sentinel terlihat.
+  useEffect(() => {
+    if (!hasMore) return;
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisible((v) => v + PAGE_SIZE);
+        }
+      },
+      { rootMargin: "200px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasMore, shown.length]);
+
   return (
     <div className="space-y-5">
       {/* Kontrol filter & urutkan */}
@@ -92,7 +146,6 @@ export function LaporanExplorer({ reports }: { reports: Report[] }) {
         </div>
 
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {/* Filter kecamatan */}
           <Select
             value={kecamatan}
             onValueChange={(v) => {
@@ -113,7 +166,6 @@ export function LaporanExplorer({ reports }: { reports: Report[] }) {
             </SelectContent>
           </Select>
 
-          {/* Filter desa */}
           <Select value={desa} onValueChange={(v) => setDesa((v as string) ?? ALL)}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Desa" />
@@ -128,11 +180,7 @@ export function LaporanExplorer({ reports }: { reports: Report[] }) {
             </SelectContent>
           </Select>
 
-          {/* Urutkan */}
-          <Select
-            value={sort}
-            onValueChange={(v) => setSort(v as SortKey)}
-          >
+          <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
             <SelectTrigger className="col-span-2 w-full sm:col-span-1">
               <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
               <SelectValue placeholder="Urutkan" />
@@ -148,21 +196,46 @@ export function LaporanExplorer({ reports }: { reports: Report[] }) {
         </div>
       </div>
 
-      <p className="text-sm text-muted-foreground">
-        {results.length} laporan ditemukan
-      </p>
-
-      {/* Hasil */}
-      {results.length > 0 ? (
+      {error ? (
+        <div className="rounded-xl border border-destructive/40 bg-destructive/10 py-16 text-center text-destructive">
+          {error}
+        </div>
+      ) : loading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {results.map((report) => (
-            <ReportCard key={report.id} report={report} />
+          {Array.from({ length: PAGE_SIZE }).map((_, i) => (
+            <Skeleton key={i} className="h-64 w-full rounded-xl" />
           ))}
         </div>
       ) : (
-        <div className="rounded-xl border border-dashed border-border py-16 text-center text-muted-foreground">
-          Tidak ada laporan yang cocok dengan filter.
-        </div>
+        <>
+          <p className="text-sm text-muted-foreground">
+            {results.length} laporan ditemukan
+          </p>
+
+          {results.length > 0 ? (
+            <>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {shown.map((report) => (
+                  <ReportCard key={report.id} report={report} />
+                ))}
+              </div>
+
+              {hasMore && (
+                <div
+                  ref={sentinelRef}
+                  className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground"
+                >
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Memuat laporan lainnya…
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="rounded-xl border border-dashed border-border py-16 text-center text-muted-foreground">
+              Tidak ada laporan yang cocok dengan filter.
+            </div>
+          )}
+        </>
       )}
     </div>
   );

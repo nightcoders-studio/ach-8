@@ -1,10 +1,10 @@
-import { Check } from "lucide-react";
+import { Check, XCircle } from "lucide-react";
 import { STATUS_TIMELINE_INDEX, TIMELINE_STEPS } from "@/lib/status";
 import type { ReportStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { formatTanggalSingkat } from "@/lib/format";
 
-// Timeline 6 tahap (visual). reachedIndex diturunkan dari status backend.
+// Timeline tahap (visual). reachedIndex diturunkan dari status backend.
 export function StatusTimeline({
   status,
   createdAt,
@@ -13,6 +13,19 @@ export function StatusTimeline({
   createdAt: string;
 }) {
   const reached = STATUS_TIMELINE_INDEX[status];
+
+  // Laporan ditolak: tampilkan status khusus, bukan timeline normal.
+  if (status === "ditolak") {
+    return (
+      <div className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-destructive">
+        <XCircle className="mt-0.5 h-5 w-5 flex-shrink-0" />
+        <div>
+          <p className="text-sm font-medium">Laporan Ditolak</p>
+          <p className="text-xs opacity-80">{formatTanggalSingkat(createdAt)}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ol className="relative space-y-0">

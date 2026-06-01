@@ -1,19 +1,14 @@
 // Tipe data Fix-In (UI-only).
-// ReportStatus & created_at + photo_url + description mengikuti backend (backend/main.py).
-// severity, category, code, locationText, kecamatan, photos = frontend-only (belum ada di backend).
+// ReportStatus & created_at + photo_url + description + kecamatan + desa mengikuti backend (backend/main.py).
+// severity, code, locationText, photos = frontend-only (turunan/tampilan).
 
-export type ReportStatus = "menunggu_audit" | "diperbaiki" | "selesai";
+export type ReportStatus =
+  | "menunggu_audit"
+  | "diperbaiki"
+  | "selesai"
+  | "ditolak";
 
 export type Severity = "ringan" | "sedang" | "berat";
-
-// Kategori kerusakan — frontend-only, belum ada di backend.
-export type Category =
-  | "jalan_berlubang"
-  | "jalan_retak"
-  | "aspal_terkelupas"
-  | "trotoar_rusak"
-  | "saluran_tersumbat"
-  | "lainnya";
 
 export interface Report {
   id: string;
@@ -27,14 +22,15 @@ export interface Report {
   description: string;
   /** Alamat sebagai teks (backend simpan koordinat; tanpa peta) */
   locationText: string;
-  /** frontend-only */
+  /** Sesuai backend */
   kecamatan: string;
-  /** frontend-only */
+  /** Sesuai backend */
   desa: string;
+  /** Koordinat dari backend (location.coordinates = [lng, lat]) */
+  latitude: number;
+  longitude: number;
   /** frontend-only */
   severity: Severity;
-  /** frontend-only */
-  category: Category;
   /** Sesuai backend */
   status: ReportStatus;
   /** ISO string, sesuai backend */

@@ -1,5 +1,4 @@
 import { LaporanExplorer } from "@/components/report/laporan-explorer";
-import { MOCK_REPORTS } from "@/lib/mock-data";
 
 export default function DaftarLaporanPage() {
   return (
@@ -13,7 +12,7 @@ export default function DaftarLaporanPage() {
         </p>
       </div>
 
-      <LaporanExplorer reports={MOCK_REPORTS} />
+      <LaporanExplorer />
     </div>
   );
 }
