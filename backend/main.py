@@ -44,14 +44,16 @@ except ConnectionFailure:
 class ReportStatus(str, Enum):
     MENUNGGU = "menunggu_audit"
     DIPERBAIKI = "diperbaiki"
-    SELESAI = "selesai"
 
+    SELESAI = "selesai"
 class ReportSchema(BaseModel):
     photo_url: str = Field(..., description="Link URL foto dari cloud storage")
     tingkat_kerusakan: str = Field(..., description="Pilih: Ringan, Sedang, Berat")
+    kecamatan: str = Field(..., description="Nama Kecamatan")
+    desa: str = Field(..., description="Nama Desa/Gampong")
     latitude: float = Field(..., description="Titik koordinat Y")
     longitude: float = Field(..., description="Titik koordinat X")
-    description: str = Field(..., description="Penjelasan detail lokasi/kerusakan")
+    description: str = Field(..., description="Penjelasan patokan/deskripsi tambahan")
 
 class UpdateStatusSchema(BaseModel):
     status: ReportStatus = Field(..., description="Pilih: menunggu_audit, diperbaiki, selesai")
@@ -92,7 +94,6 @@ async def create_report(report: ReportSchema):
         new_report = {
             "photo_url": report.photo_url,
             "tingkat_kerusakan": report.tingkat_kerusakan,
-            "kategori": report.kategori,
             "kecamatan": report.kecamatan,
             "desa": report.desa,
             "location": {
